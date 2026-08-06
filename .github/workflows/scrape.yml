@@ -6,6 +6,9 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch: {}   # Actions 탭에서 수동 실행 버튼도 사용 가능
 
+permissions:
+  contents: write   # 저장소에 결과 파일을 커밋하기 위해 필요
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -29,9 +32,15 @@ jobs:
       - name: 스크립트 실행
         run: python andar_scrape.py
 
-      - name: 결과 파일 업로드 (Artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: andar-result-${{ github.run_id }}
-          path: "andar_할인율모니터링_*.xlsx"
-          retention-days: 30
+      - name: 결과 파일을 results 폴더로 정리
+        run: |
+          mkdir -p results
+          mv andar_할인율모니터링_*.xlsx results/
+
+      - name: 결과 파일 커밋 & 푸시
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add results/*.xlsx
+          git commit -m "결과 파일 업데이트 $(date +'%Y-%m-%d')" || echo "변경사항 없음"
+          git push
