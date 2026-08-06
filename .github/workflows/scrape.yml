@@ -1,0 +1,37 @@
+name: Andar Daily Scrape
+
+on:
+  schedule:
+    # 매일 UTC 02:00 = 한국시간(KST) 오전 11:00
+    - cron: "0 2 * * *"
+  workflow_dispatch: {}   # Actions 탭에서 수동 실행 버튼도 사용 가능
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 라이브러리 설치
+        run: pip install -r requirements.txt
+
+      - name: Chrome 설치
+        uses: browser-actions/setup-chrome@v1
+
+      - name: 스크립트 실행
+        run: python andar_scrape.py
+
+      - name: 결과 파일 업로드 (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: andar-result-${{ github.run_id }}
+          path: "andar_할인율모니터링_*.xlsx"
+          retention-days: 30
