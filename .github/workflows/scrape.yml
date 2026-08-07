@@ -2,8 +2,10 @@ name: Andar Daily Scrape
 
 on:
   schedule:
-    # 매일 UTC 02:00 = 한국시간(KST) 오전 11:00
-    - cron: "0 2 * * *"
+    # 매일 UTC 00:00 = 한국시간(KST) 오전 9:00
+    - cron: "0 0 * * *"
+    # 매일 UTC 06:00 = 한국시간(KST) 오후 3:00
+    - cron: "0 6 * * *"
   workflow_dispatch: {}   # Actions 탭에서 수동 실행 버튼도 사용 가능
 
 permissions:
@@ -42,5 +44,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add results/*.xlsx
-          git commit -m "결과 파일 업데이트 $(date +'%Y-%m-%d')" || echo "변경사항 없음"
+          git commit -m "결과 파일 업데이트 $(date +'%Y-%m-%d %H:%M')" || echo "변경사항 없음"
           git push
