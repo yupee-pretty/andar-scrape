@@ -64,11 +64,37 @@ def keep_float(text: str) -> str:
     return m.group(1) if m else ""
 
 
+# 안다르 품번 형식 예: EPTSC-04, EMTSC-29
+# 품번이 구분자 없이 연결된 경우(예: EMTSC-29EPTSC-10)도 인식한다.
+SKU_PATTERN = re.compile(r"E[A-Z]+-\d{2,}")
+
+
 def split_skus(model: str) -> list[str]:
     if not model:
         return [""]
-    parts = [p.strip() for p in str(model).replace(" ", "").split("_") if p.strip()]
-    return parts if parts else [str(model).strip()]
+
+    raw = str(model).strip().upper()
+    if not raw:
+        return [""]
+
+    result = []
+    # 흔히 쓰이는 구분자를 먼저 처리한다.
+    for part in re.split(r"[_\s,;/]+", raw):
+        part = part.strip()
+        if not part:
+            continue
+
+        # 품번 사이에 구분자가 없는 경우도 처리한다.
+        hits = SKU_PATTERN.findall(part)
+        if hits and "".join(hits) == part:
+            result.extend(hits)
+        else:
+            # 형식이 예상과 다르면 원문을 보존해 기존 데이터 손실을 방지한다.
+            result.append(part)
+
+    # 순서를 유지하면서 중복 제거
+    result = list(dict.fromkeys(result))
+    return result if result else [raw]
 
 
 def to_int_price(text: str) -> int:
@@ -322,7 +348,7 @@ def fast_fetch_model_candidates(url: str, timeout: int = 15) -> list[str]:
 
     # 페이지 전체 텍스트에서 E로 시작하는 SKU 패턴도 후보로 추가
     text = soup.get_text(" ", strip=True)
-    regex_hits = re.findall(r"\b(E[A-Z0-9]+(?:_[A-Z0-9]+)*)\b", text)
+    regex_hits = SKU_PATTERN.findall(text)
     for hit in regex_hits:
         candidates.extend(split_skus(hit))
 
